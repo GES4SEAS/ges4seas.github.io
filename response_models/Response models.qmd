@@ -6,6 +6,8 @@ format:
     toc-location: left
     toc-expand: 2
     toc-title: Response models
+    output-file: "index"
+    output-ext:  "html"
 editor: visual
 ---
 
