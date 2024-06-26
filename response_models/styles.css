@@ -1,0 +1,18 @@
+@font-face{
+  font-family: "Viga";
+  src: url("../fonts/Viga-Regular.ttf") format("truetype");
+}
+
+.quarto-title-block .quarto-title-banner  {
+  background-image: url(../logo/RGB_GES4SEAS_square_white.png);
+  background-size: 300px;
+  background-position: left;
+  background-repeat: no-repeat;
+  padding-left: 10px;
+  background-origin: content-box;
+  color: white;
+}
+
+h1.title{
+  color: white;
+}

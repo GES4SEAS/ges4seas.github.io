@@ -1,7 +1,17 @@
 ---
 title: "Response curve, threshold, tipping point models"
+subtitle: "GES4SEAS Work Package 4"
+# author: "Ciarán Murray, NIVA Denmark"
+# date: last-modified
+# date-format: "DD-MM-YYYY"
+description: "Task 4.3 Inclusion of response curves and threshold models"
+title-block-banner: "#184E80"
 format:
   html:
+    embed-resources: true
+    smooth-scroll: true
+    theme: cosmo
+    fontcolor: "#222140"
     toc: true
     toc-location: left
     toc-expand: 2
@@ -9,6 +19,7 @@ format:
     output-file: "index"
     output-ext:  "html"
 editor: visual
+css: styles.css
 ---
 
 ```{r}
