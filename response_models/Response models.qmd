@@ -1,0 +1,491 @@
+---
+title: "Response curve, threshold, tipping point models"
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-expand: 2
+    toc-title: Response models
+editor: visual
+---
+
+```{r}
+#| echo: false
+#| warning: false
+
+library(tibble)
+library(dplyr)
+
+fig_font_size <- 11
+```
+
+# Introduction
+
+This aim of the this document is to catalogue and describe the forms of models which we envisage for inclusion in the [GES4SEAS toolbox](%22%22 "link to the GES4SEAS toolbox").
+
+At present we are working with two main types of tools:
+
+-   **status** assessment
+-   **combined** (or *cumulative*) **effect** (or *impact*) assessment
+
+## Status assessment
+
+This form of tool aims to determine the absolute condition of the ecosystem i.e. for example is the state *good* or *not good*. There are many examples of this kind of tool. The GES4SEAS toolbox implements one of these - the [NEAT tool](%22%22 "link to the NEAT tool"). This is a flexible tool which can makes use of a wide variety of indicator parameters at differing spatial resolutions.
+
+*More on other tools and indicator-based status assessments...*
+
+## Cumulative effect assessment
+
+This form of tool provides a quantitative measure of the combined effects on ecosystems of the pressures resulting from many types of human activity. This can indicate how the combined effects vary spatially and show that they are relatively higher in one location or region than in another. They do not at present predict status or health of ecosystems based on the levels of pressure intensity.
+
+*more info...*
+
+## Unified assessment tools
+
+The ultimate aim of assessment tools is to guide the management of human activities so that the effects of the resulting pressures on ecosystem health are kept within limits which prevent the deterioration of healthy ecosystems and which allow those ecosystems not in a healthy state to recover.
+
+To that end, the similar goals of (i) being able to predict the resulting state of ecosystems given a set of pressures or (ii) to quantify necessary reductions in pressures required to ensure the maintenance of or return to good status in ecosystems would both require linkages between pressure levels and ecosystem health.
+
+*Comment on the extent to which this is possible...*
+
+```{r}
+#| echo: false
+#| warning: false
+
+library(dplyr)
+x <- seq(0, 1, 0.0001) %>% 
+  tibble::tibble(x=.)
+mu <- c(0.3,1) %>%
+  tibble::tibble(mu=.)
+
+dat <- merge(mu, x, all=T)
+```
+
+# Response models
+
+## Simple linear responses
+
+### One pressure one ecosystem component
+
+Ignoring spatial resolution for a moment, if we consider the effects resulting from a number of [normalised](#normalisation "Normalisation of pressure intensities and ecosystem component quantities") pressures acting on ecosystem components then the effect $I_{ij}$ resulting from pressure $j$ acting on the ecosystem component $i$ is:
+
+$$
+I_{ij} = D_i *e_j *  µ_{ij}
+$$ {#eq-I-single}
+
+where:
+
+$D_i$ is the *intensity* of pressure $i$
+
+$e_j$ is the *quantity* or *level* of ecosystem $j$
+
+$µ_{ij}$ is the *sensitivity* of ecosystem component $j$ to pressure $i$
+
+```{r}
+#| label: fig-linear-response
+#| fig-cap: "Linear response to single pressure varies with sensitivity, µ"
+#| fig-alt: "An x-y plot showing linear response to single pressure for two different sensitivity values µ"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+
+dat <- dat %>%
+  mutate(y=x*mu)
+ 
+
+ggplot(dat) +
+  geom_line(aes(x=x, y=y, group=factor(mu), 
+                colour=factor(mu)),
+            linewidth=1) +
+  theme_minimal(base_size = fig_font_size) +
+  scale_color_manual("µ",values=c("#00BFC4","#F8766D")) +
+  labs(x="Pressure intensity", y="Response intensity") 
+
+```
+
+@fig-linear-response shows how the estimated effect varies with increasing pressure intensity for two different values of sensitivity $µ$.
+
+### Multiple pressures and ecosystem components
+
+Considering the pressure intensities and ecosystem component levels as spatially varying on a 2-dimensional grid with coordinates $x, y$ and summing the effects for *n* pressures and *m* ecosystem components in each grid cell, we have the simplest (*sum*) form of the Halpern *et al* assessment [ref?]():
+
+$$
+I_{sum}(x,y) =  \sum_{i=1}^{n}\sum_{j=1}^{m}{D_i(x,y) *e_j(x,y) *  µ_{ij}}
+$$ {#eq-I-sum}
+
+Similarly to @eq-I-single:
+
+$D_i(x,y)$ i the *intensity* of pressure $i$ in the grid cell $x,y$
+
+$e_j(x,y)$ is the *quantity* or *level* of ecosystem $j$ in the grid cell $x,y$
+
+$µ_{ij}$ is the *sensitivity* of ecosystem component $j$ to pressure $i$
+
+By normalising the sum of effects to the ecosystem diversity, we obtain the (*mean*) version of the Halpern *et al* assessment:
+
+$$
+I_{mean}(x,y) =  \sum_{i=1}^{n}\sum_{j=1}^{m}{\frac{1}{E_{div}(x,y)}}{D_i(x,y) *e_j(x,y) *  µ_{ij}}
+$$ {#eq-I-mean}
+
+where $E_{div}$ the ecosystem diversity index is given by:
+
+$$
+E_{div}(x,y) =  \sum_{j=1}^{m}e_j(x,y)
+$$ {#eq-E-div}
+
+### Normalisation of pressure intensities and ecosystem component *quantities* {#normalisation}
+
+The simplest form of quantification of an ecosystem component or a pressure is a simple presence/absence - assigning a $0$ or $1$ value.
+
+...
+
+A comparison of the products of noise intensities (dB) and population counts with the products of nutrient concentrations and dimensionless quality indices is not meaningful. We need to transform the observed quantities onto some comparable scales.
+
+@fig-pressure-distribution shows the distribution of intensity, as absolute values, for a pressure across an area of interest. This could be, for example, the distribution of all values in the raster grid cells of a data layer representing concentration of a nutrient \[mg l^-1^\].
+
+```{r}
+#| label: fig-pressure-distribution
+#| fig-cap: "A pressure with lognormal intensity distribution"
+#| fig-alt: "A pressure with intensity distribution, shown as a frequency histogram and as cumulative frequency plot both with normal and log-transformed x-axis"
+#| fig-height: 4
+#| fig-width: 6
+#| echo: false
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+mean_conc <- 3.532
+sd_conc <- 2
+conc <- rnorm(10000, mean=log(mean_conc+0.1), sd=log(sd_conc+0.1))
+conc <- exp(conc)-0.1
+dfconc <- data.frame(conc=conc)
+
+p1 <- ggplot() +
+  geom_histogram(data=dfconc, aes(x=conc,
+                                  y = after_stat(count / sum(count))), 
+                 bins=100,
+                 colour="grey", fill="grey", alpha=0.2) +
+  theme_minimal(base_size = fig_font_size) +
+  labs(x="Pressure intensity\n(absolute)", y="Frequency") 
+
+p2 <- ggplot() +
+  geom_histogram(data=dfconc, aes(x=conc,
+                                  y = after_stat(count / sum(count))), 
+                 bins=100,
+                 colour="grey", fill="grey", alpha=0.2) +
+  theme_minimal(base_size = fig_font_size) +
+  labs(x="Pressure intensity\n(absolute, log-scale)", y="Frequency") +
+  scale_x_log10()
+
+
+p3 <-ggplot(data=dfconc, aes(x=conc)) +
+  stat_ecdf(geom = "step", pad=F) +
+  theme_minimal(base_size = fig_font_size) +
+  labs(x="Pressure intensity\n(absolute)", y="Cumulative frequency") 
+
+p4 <-ggplot(data=dfconc, aes(x=conc)) +
+  stat_ecdf(geom = "step", pad=F) +
+  theme_minimal(base_size = fig_font_size) +
+  labs(x="Pressure intensity\n(absolute, log-scale)", y="Cumulative frequency") +
+  scale_x_log10()
+
+p <- (p1+p2)/(p3+p4)
+p
+```
+
+@fig-pressure-distribution shows....
+
+We can normalise the pressure intensities by log-transforming them and rescaling from $0$ to $1$:
+
+$$
+D^{'} =  \frac{ln(D+1) - ln(D_{min}+1)}{ln(D_{max}+1)-ln(D_{min}+1)} 
+$$ {#eq-normalise-log-rescale}
+
+Alternative methods include truncation at percentile values (e.g, 99th) to exclude outliers, before log-transformation and rescaling:
+
+$$ D^{'} =  \frac{ln(D+1) - ln(D_{1\%}+1)}{ln(D_{99\%}+1)-ln(D_{1\%}+1)}  $$
+
+### Product of ecosystem and pressure
+
+There is a linear relationship between the pressure intensity, $D$ and the estimated effect $I$. This assumes a given ecosystem level value $e$. For a given pressure intensity, $D$, there is also a linear relationship between the ecosystem level value $e$ and the effect.
+
+The variation in effect with pressure intensity and ecosystem value can be shown in a heat map.
+
+```{r}
+#| label: fig-effect-heat-maps
+#| fig-cap: "Effect vs normalised pressure and ecosystem component values"
+#| fig-alt: "Heat-maps showing the variation of effect with values of pressure intensity and ecosystem components"
+#| fig-height: 3
+#| fig-width: 6
+#| echo: false
+#| warning: false
+
+library(dplyr)
+library(ggplot2)
+library(metR)
+library(scales)
+
+x <- seq(0, 1, 0.01) %>% 
+  tibble::tibble(x=.)
+y <- seq(0, 1, 0.01) %>% 
+  tibble::tibble(y=.)
+mu <- c(0.3,1) %>%
+  tibble::tibble(mu=.)
+
+dat <- merge(x, y, all=T)
+dat <- merge(mu, dat, all=T)
+
+dat <- dat %>%
+  mutate(I=x*y*mu) %>%
+  mutate(Case=paste0("µ = ", format(mu, digits=2)))
+
+
+ggplot(dat) +
+  geom_raster(aes(x=x, y=y, fill=I)) +
+  geom_contour(aes(x=x, y=y,z=I), colour="black", alpha=0.2) +
+  geom_text_contour(aes(x=x, y=y,z=I), alpha=0.5) +
+  theme_minimal(base_size = fig_font_size) +
+  scale_fill_distiller("Effect",palette = "Spectral",breaks=c(0.0,1.0), 
+                       labels=c("0.0","1.0")) +
+  facet_wrap(.~Case) +
+  labs(x="Pressure intensity", y="Ecosystem value")
+```
+
+## Non-linear responses
+
+### Logistic functions
+
+The generalized logistic function can be written:
+
+$$
+f(x)=\frac{L}{1+e^{-k(x-x_0)}}
+$$ {#eq-logistic-function}
+
+For the case where $L=1$, the function varies between $0$ and $1$. @fig-logistic-function shows the function for $x_0=0.5$ and for 3 different values of $k$:
+
+```{r}
+#| label: fig-logistic-function
+#| fig-cap: "A general logistic function"
+#| fig-alt: "Graph of a standard logistic function"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+x <- seq(0,1,0.001) %>% 
+  tibble::tibble(x=.) 
+
+k <- c(10,20,50) %>%
+  tibble::tibble(k=.)
+
+dat <- merge(k, x, all=T)
+
+dat <- dat %>%
+  mutate(y=1/(1+exp(-k*(x-0.5))))
+
+ggplot(dat) +
+  geom_line(aes(x=x, y=y, group=factor(k), 
+                colour=factor(k)),
+            linewidth=1) +
+  theme_minimal(base_size = fig_font_size) +
+  scale_color_discrete("k") +
+  labs(x="x", y="y") 
+```
+
+The logistic function can be approximated by a piece-wise linear function with two fixed points. For general case where $y$ can vary outside the range $0-1$, the equation can be written:
+
+$$ f(x)=\begin{cases} y_0, &  x \le x_0 \\                  y_0 + {(y_1 - y_0)  (\frac{x - x_0}{x_1 - x_0} )}, & x_0 \lt x \le x_1 \\ y_1, & x \gt x_1 \end{cases} $$
+
+For the case where $y$ varies in the range $0-1$:
+
+$$
+f(x)=\begin{cases} 0, &  x \le x_0 \\ 
+                 \frac{x - x_0}{x_1 - x_0}, & x_0 \lt x \le x_1 \\
+ 1, & x \gt x_1 \end{cases}
+$$ {#eq-piecewise-logistic-1}
+
+@fig-linear-logistic-function shows how the logistic function for $k=20$ can be approximated by a piece-wise linear function.
+
+```{r}
+#| label: fig-linear-logistic-function
+#| fig-cap: "A piece-wise linear approximation of a logistic function"
+#| fig-alt: "Graph of a logistic function and a piece-wise linear approximation"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+x <- seq(0,1,0.001) %>% 
+  tibble::tibble(x=.) 
+
+case <- c("linear","logistic") %>%
+  tibble::tibble(case=.)
+
+dat <- merge(case, x, all=T)
+
+xfix <- 0.12
+x0 <- 0.5
+
+dat <- dat %>%
+  mutate(y=1/(1+exp(-20*(x-0.5)))) %>%
+  mutate(y=ifelse(case=="linear",
+                  ifelse(x< (x0-1*xfix), 0, 
+                         ifelse(x>x0+xfix, 
+                                1,
+                                (x+xfix-x0)/ (2*xfix))),
+                         y))
+
+dat$case <- factor(dat$case, levels=c("logistic","linear"))
+df_txt <- data.frame(
+  x=c(x0-xfix,x0+xfix),
+  y=c(0.5,0.5),
+  txt=c("x[0]","x[1]")
+)
+
+ggplot(dat) +
+  geom_vline(xintercept = c(x0-xfix,x0+xfix), linetype=2, colour="#619CFF") +
+  geom_text(data=df_txt, aes(x=x,y=y,label=txt), parse=T) +
+  geom_line(aes(x=x, y=y, group=case, 
+                colour=case),
+            linewidth=1) +
+  theme_minimal(base_size = fig_font_size) +
+  scale_color_discrete("type") +
+  labs(x="x", y="y") 
+
+```
+
+more....
+
+### Thresholds
+
+By selecting the appropriate parameters, piece-wise linear functions can be used to represent other functional relationship, including thresholds, where a pressure has no effect below a certain intensity or where its effect does not increase above a certain limit:
+
+```{r}
+#| label: fig-threshold-functions
+#| fig-cap: "Piece-wise linear threshold functions"
+#| fig-alt: "Graphs of linear response functions with thresholds"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+x <- seq(0,1,0.001) %>% 
+  tibble::tibble(x=.) 
+
+case <- c("threshold","limit") %>%
+  tibble::tibble(case=.)
+
+dat <- merge(case, x, all=T)
+
+x0 <- 0.35
+x1 <- 0.78
+
+dat <- dat %>%
+  rowwise() %>%
+  mutate(y=max(x-x0,0)*1/(1-x0))  %>%
+  mutate(y=ifelse(case=="limit",
+                  min(x,x1)*0.7,
+                  y)) %>%
+  ungroup()
+
+# dat$case <- factor(dat$case, levels=c("threshold","limit"))
+# df_txt <- data.frame(
+#   x=c(x0-xfix,x0+xfix),
+#   y=c(0.5,0.5),
+#   txt=c("x[0]","x[1]")
+# )
+
+ggplot(dat) +
+  #geom_vline(xintercept = c(x0-xfix,x0+xfix), linetype=2, colour="#619CFF") +
+  #geom_text(data=df_txt, aes(x=x,y=y,label=txt), parse=T) +
+  geom_line(aes(x=x, y=y, group=case, 
+                colour=case),
+            linewidth=1) +
+  theme_minimal(base_size = fig_font_size) +
+  scale_color_discrete("type") +
+  labs(x="x", y="y") 
+```
+
+more...
+
+### Other non-linear responses
+
+Other forms of non-linear response can be similar to a logarithmic function within a specific range. For example, looking again at @fig-logistic-function, we can see that an exponential function $f(x)=e^x$ resembles the growth phase of the logistic function where $x \lt x_0$.
+
+*other examples*
+
+*figures*
+
+In many cases the functions can be approximated by linear piece-wise functions. The number of segments in the piece-wise function can be increased to give a closer fit to the original function:
+
+$$ f(x)=\begin{cases} y_0, &  x \le x_0 \\                  y_0 + {(y_1 - y_0)  (\frac{x - x_0}{x_1 - x_0} )}, & x_0 \lt x \le x_1 \\ y_1 + {(y_2 - y_1)  (\frac{x - x_1}{x_2 - x_1} )}, & x_1 \lt x \le x_2 \\ ... \\ y_{n-1} + {(y_{n} - y_{n-1})  (\frac{x - x_{n-1}}{x_{n} - x_{n-1}} )}, & x_{n-1} \lt x \le x_{n} \\y_n, & x \gt x_n \end{cases} $$ {#eq-piecewise-multiple}
+
+## Multivariate responses
+
+more...
+
+# Algorithms
+
+The assessment methods must be converted into operational code. The GES4SEAS toolbox uses the [tcl](https://www.tcl-lang.org/) programming language but the algorithms can be generalized and written in many different languages. The examples here are written in **R**:
+
+## No spatial interactions
+
+With many data layers and a fine spatial resolution, the computational effort can still be large but the method remains quite simple. The core calculations for the 'Halpern' method ( @eq-I-sum and @eq-I-mean) can be written in relatively few lines of code.
+
+Since there is no spatial interaction, each 2-dimensional grid cell can be assigned an id number. All 2-dimensional arrays then be arranged as 1-dimensional lists. After calculations are completed the position in the list can be used to retrieve information about the grid cells and convert the 1-dimensional results back to 2-dimensional maps.
+
+``` {#general-loop .R}
+
+# p[i, k]   # pressure intensity for pressure i in grid cell k
+# ec[j, k]  # ecosystem level for component j in grid cell k
+# mu[i, k]  # sensitivity of ecosystem component j to pressure i
+# I_sum[k]  # the sum of effects in grid cell k
+# I_mean[k] # the sum of effects in grid cell k normalised to E_div
+# E_div(k)  # the ccosystem diversity in cell k
+
+# loop through each grid cell
+for(k in 1:length(gridcells)){
+  
+  # initialise the sum of effects for this cell
+  I_sum[k] <- 0
+  
+  # initialise the ecosystem diversity
+  E_div[k] <- 0
+  
+  # loop through each ecosystem component
+  for(j in 1:length(ecosystem_components)){
+
+    # check if the ecosystem component value >0
+    # otherwise no calculations are required 
+    if(ec[j,k] > 0){
+      E_div[k] <- E_div[k] +  ec[j,k] 
+      
+      # loop through each pressure
+      for(i in 1:length(pressures)){
+        I_sum[k] <- I_sum[k] + p[i,k] * ec[j,k] * mu[i,j]
+      }
+    }
+  }
+  
+  # if E_div > 0 then divide the I_sum by E_div to get I_mean
+  if(E_div[k]>0){
+      I_mean[k] <- I_sum[k] / E_div[k]
+  }else{
+    I_mean[k] <- 0
+  }
+}
+```
+
+The algorithm as written here is intended purely to demonstrate the simplicity of the calculation required. There is plenty of room for improvement. For example, the use of loops is quite inefficient when matrix and parallel operations could be used instead.
+
+## Spatial Interactions
+
+This is where things begin to get more complicated...
