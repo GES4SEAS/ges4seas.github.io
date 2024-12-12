@@ -1,4 +1,4 @@
-# Welcome to the GES4SEAS GitHub Organisation
+# GES4SEAS
 
 For more information about GES4SEAS, please see
 <https://www.ges4seas.eu/>.
@@ -9,9 +9,8 @@ message to Ciarán Murray via the project Teams channel.
 The GES4SEAS GitHub repositories can be found here:
 <https://github.com/orgs/GES4SEAS/>
 
-<br> <br> <br>
 
-[Response models](./response_models)
+[Response models](../response_models)
 
 <br> <br> <br>
 
@@ -24,5 +23,4 @@ Views and opinions expressed are however those of the authors only and
 do not necessarily reflect those of the European Union or UK Research
 and Innovation. Neither the European Union nor the granting authority
 can be held responsible for them.*
-
 
