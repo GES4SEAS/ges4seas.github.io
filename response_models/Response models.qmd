@@ -378,7 +378,85 @@ ggplot(dat) +
 
 ```
 
-more....
+We need to find the function which best describes the response of an ecosystem component to increasing intensity of a pressure.
+
+This example @fig-fitting-nonlinear-function-1 shows observations of abundance of a species at different pressure intensities. By fitting a logistic function to the observations we can estimate the response of the species to the pressure and the levels of pressure which are
+
+```{r}
+#| label: fig-fitting-nonlinear-function-1
+#| fig-cap: "Abundance of a species versus pressure intensity"
+#| fig-alt: "Graph of observations of species versus pressure intensity"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+
+
+x <- seq(0,1,0.005) 
+
+err <- rnorm(length(x), mean=0, s=0.7)
+             
+x <- x %>% 
+  tibble::tibble(x=.) 
+err <- err %>% 
+  tibble::tibble(err=.) 
+
+x <- bind_cols(x, err)
+
+
+#k <- c(10,20,50) %>%
+k <- c(20) %>%
+  tibble::tibble(k=.)
+
+dat0 <- merge(k, x, all=T)
+
+x0 <- 0.55 
+
+dat0 <- dat0 %>%
+  mutate(y=1 - (1/(1+exp(-k*((x*(1+err)-1+x0)))))) %>%
+  mutate(y2=1 - (1/(1+exp(-k*(x-1+x0))))) %>%
+  mutate(yimp= (1/(1+exp(-k*(x-1+x0)))))
+  
+dat0 <- dat0 %>%
+  filter(y>0.001)
+  
+
+# ggplot(dat0) +
+#   geom_point(aes(x=x, y=y), alpha=0.2) +
+#   theme_minimal(base_size = fig_font_size) +
+#   labs(x="pressure",y="abundance") 
+
+ggplot(dat0) +
+  geom_point(aes(x=x, y=y), alpha=0.2) +
+  geom_line(aes(x=x, y=y2),
+            linewidth=1, colour="red",
+            alpha=0.4, linetype=1) +
+  geom_vline(xintercept = c(0.1,0.8), colour="red",
+             linetype=2, linewidth=1,
+             alpha=0.2) +
+  theme_minimal(base_size = fig_font_size) +
+  labs(x="pressure",y="abundance") 
+
+```
+
+Given the knowledge about the range of pressure values where the species shows a response, we can formulate a pressure-response function to describe how the impact on the species varies @fig-fitting-nonlinear-function-2
+
+```{r}
+#| label: fig-fitting-nonlinear-function-2
+#| fig-cap: "Abundance of a species versus pressure intensity"
+#| fig-alt: "Graph of observations of species versus pressure intensity"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+#| 
+ggplot(dat0) +
+  geom_line(aes(x=x, y=yimp),
+            linewidth=1,
+            alpha=0.4, linetype=1) +
+  theme_minimal(base_size = fig_font_size) +
+  labs(x="pressure",y="impact") 
+```
 
 ### Thresholds
 
