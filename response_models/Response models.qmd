@@ -443,8 +443,8 @@ Given the knowledge about the range of pressure values where the species shows a
 
 ```{r}
 #| label: fig-fitting-nonlinear-function-2
-#| fig-cap: "Abundance of a species versus pressure intensity"
-#| fig-alt: "Graph of observations of species versus pressure intensity"
+#| fig-cap: "Species response to pressure intensity"
+#| fig-alt: "Graph of pressure-response function"
 #| fig-height: 3
 #| fig-width: 4
 #| echo: false
@@ -524,6 +524,8 @@ $$ f(x)=\begin{cases} y_0, &  x \le x_0 \\                  y_0 + {(y_1 - y_0)  
 ## Multivariate responses
 
 more...
+
+## Modelling pressure response
 
 # Algorithms
 
