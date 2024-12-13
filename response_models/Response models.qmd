@@ -43,15 +43,17 @@ At present we are working with two main types of tools:
 
 ## Status assessment
 
-This form of tool aims to determine the absolute condition of the ecosystem i.e. for example is the state *good* or *not good*. There are many examples of this kind of tool. The GES4SEAS toolbox implements one of these - the [NEAT tool](%22%22 "link to the NEAT tool"). This is a flexible tool which can makes use of a wide variety of indicator parameters at differing spatial resolutions.
+This form of tool aims to determine the absolute condition of the ecosystem i.e. for example is the state *good* or *not good*. There are many examples of this kind of tool. The GES4SEAS toolbox implements one of these - the [NEAT tool](https://www.azti.es/en/productos/neat-software-nested-environmental-status-assessment-tool/ "link to the NEAT tool at AZTI"). This is a flexible tool which can makes use of a wide variety of indicator parameters at differing spatial resolutions.
 
-*More on other tools and indicator-based status assessments...*
+The principle of *NEAT* and similar tools is the comparison of the observed values of one or more indicator parameters with agreed threshold values or reference points which determine the boundary between good and not-good states. For example, the average measured concentration of chlorophyll *a* can be used as an indicator of eutrophication.
+
+A further typical feature of these tools is a method to aggregate the results of several indicators in categories or across spatial scales and classify the results to arrive at an overall *integrated status assessment*.
 
 ## Cumulative effect assessment
 
 This form of tool provides a quantitative measure of the combined effects on ecosystems of the pressures resulting from many types of human activity. This can indicate how the combined effects vary spatially and show that they are relatively higher in one location or region than in another. They do not at present predict status or health of ecosystems based on the levels of pressure intensity.
 
-*more info...*
+This form of tool is data hungry, using spatial data which maps the distribution of species and habitats as well as the distribution of pressures acting on these ecosystem components.
 
 ## Unified assessment tools
 
@@ -59,7 +61,7 @@ The ultimate aim of assessment tools is to guide the management of human activit
 
 To that end, the similar goals of (i) being able to predict the resulting state of ecosystems given a set of pressures or (ii) to quantify necessary reductions in pressures required to ensure the maintenance of or return to good status in ecosystems would both require linkages between pressure levels and ecosystem health.
 
-*Comment on the extent to which this is possible...*
+Work is ongoing in the GES4SEAS project to combine the status assessment functionality of the NEAT tool with the cumulative assessment methods. Whilst the tool may not be able to predict explicitly the status resulting from certain levels of pressures, the combination of the two types of tool in GES4SEAS brings this goal little closer.
 
 ```{r}
 #| echo: false
