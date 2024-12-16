@@ -80,6 +80,8 @@ dat <- merge(mu, x, all=T)
 
 ## Simple linear responses
 
+In the [Halpern _et al._ (2008)](https://www.science.org/doi/10.1126/science.1149345) method, the _impact_ of a pressure on an ecosystem component is given by the product of the pressure intensity and a constant, the _sensitivity score_. This implies that there is a linear relationship between the intensity of a pressure and its effect on the ecosystem component.
+
 ### One pressure one ecosystem component
 
 Ignoring spatial resolution for a moment, if we consider the effects resulting from a number of [normalised](#normalisation "Normalisation of pressure intensities and ecosystem component quantities") pressures acting on ecosystem components then the effect $I_{ij}$ resulting from pressure $j$ acting on the ecosystem component $i$ is:
@@ -214,8 +216,6 @@ p <- (p1+p2)/(p3+p4)
 p
 ```
 
-@fig-pressure-distribution shows....
-
 We can normalise the pressure intensities by log-transforming them and rescaling from $0$ to $1$:
 
 $$
@@ -274,9 +274,11 @@ ggplot(dat) +
 
 ## Non-linear responses
 
-### Logistic functions
+### Thresholds and logistic functions
 
-The generalized logistic function can be written:
+When talking about thresholds in the context of ecosystem response to a pressure, we are considering a pressure where it has no effect below a certain level. With increasing pressure, no effect is seen until we approach the the threshold level. The response increases with increasing pressure. Finally we could consider that a maximium effect is reached at a certain pressure level. Beyond this, any further increases in pressure do not cause the response to increase beyond this maximum level.
+
+The response to a pressure as outlined here, with a threshold pressure level and maximum response, can be described using a logisitc function. The generalized logistic function can be written:
 
 $$
 f(x)=\frac{L}{1+e^{-k(x-x_0)}}
@@ -316,6 +318,293 @@ ggplot(dat) +
   scale_color_discrete("k") +
   labs(x="x", y="y") 
 ```
+
+
+### Other non-linear responses
+
+There are many other non-linear functions which could be relevant for representing ecosystem responses to pressures. Some of the more common ones are outlined briefly here. Others not shown, include power functions, Weibull functions.
+
+#### log functions 
+
+@fig-log-function shows functions with the general form 
+
+$$f(x)=a + b\operatorname{log}(x)$${#eq-log-function}
+
+
+```{r}
+#| label: fig-log-function
+#| fig-cap: "Logarithmic functions"
+#| fig-alt: "Graph of standard logarithmic functions"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+x <- c(0.0001, seq(0.001,1,0.001)) %>% tibble::tibble(x=.) 
+
+b <- c(0.05,0.1,0.2) %>% tibble::tibble(b=.)
+a <- c(1,1,1) %>% tibble::tibble(a=.)
+a <- bind_cols(a,b)
+
+dat <- merge(a, x, all=T)
+
+dat <- dat %>% mutate(y=a + b* log(x))
+
+dat <- dat %>% mutate(y=ifelse(y<0,NA,y))
+
+ggplot(dat) +
+  geom_line(aes(x=x, y=y, group=factor(b), 
+                colour=factor(b)),
+            linewidth=1) +
+  theme_minimal(base_size = fig_font_size) +
+  scale_color_discrete("a", guide="none") +
+  labs(x="x", y="y") #+ coord_cartesian(ylim=c(0,NA))
+```
+
+#### exponential functions 
+
+Functions having the general form of the exponential are shown in @fig-exponential-functions: $$f(x)=A e^{kx}$${#eq-exp-function}
+
+
+```{r}
+#| label: fig-exponential-functions
+#| fig-cap: "Exponential functions"
+#| fig-alt: "Graph of exponential functions"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+x <- seq(0,1,0.001) %>% 
+  tibble::tibble(x=.) 
+
+k <- c(3,5,10) %>%
+  tibble::tibble(k=.)
+a <- c(0.01,0.003,0.000045) %>%
+  tibble::tibble(a=.)
+k <- bind_cols(a,k)
+
+dat <- merge(k, x, all=T)
+
+# Y=a[1−exp(−cX)]
+
+dat <- dat %>%
+  mutate(y=a*exp(x*k))
+
+ggplot(dat) +
+  geom_line(aes(x=x, y=y, group=factor(k), 
+                colour=factor(k)),
+            linewidth=1) +
+  theme_minimal(base_size = fig_font_size) +
+  scale_color_discrete("k", guide="none") +
+  labs(x="x", y="y") 
+```
+
+
+Comparing with @fig-logistic-function, we can see similarity between the exponential function and the growth phase of the logistic function where $x \lt x_0$.
+
+#### negative exponential functions 
+
+The negative exponential function has the general form
+ $$f(x)=1-e^{-kx}$${#eq-neg-exp-function}
+ 
+This is illustrated in @fig-negative-exponential-function.
+
+
+```{r}
+#| label: fig-negative-exponential-function
+#| fig-cap: "Negative exponential function"
+#| fig-alt: "Graph of negative exponential functions"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+
+x <- seq(0,1,0.001) %>% 
+  tibble::tibble(x=.) 
+
+k <- c(2,5,10) %>%
+  tibble::tibble(k=.)
+
+dat <- merge(k, x, all=T)
+
+# Y=a[1−exp(−cX)]
+
+dat <- dat %>%
+  mutate(y=1-exp(-k*x))
+
+ggplot(dat) +
+  geom_line(aes(x=x, y=y, group=factor(k), 
+                colour=factor(k)),
+            linewidth=1) +
+  theme_minimal(base_size = fig_font_size) +
+  scale_color_discrete("k") +
+  labs(x="x", y="y") 
+```
+
+
+
+## Multivariate responses
+
+In the current implementation of the GES4SEAS tool, the effect of pressures on ecosystem components is calculated separately for each unique combination of pressure and ecosystem component. The combined result is then calculated by simple addition of individual contributions. For the Halpern _mean_ method, the sum is then normalised to the quantity or number of ecosystem components but there is no interaction between pressures. The _EcoImpactMapper_ tool allows for testing if the effects of interactions between stressors are potentially important for the results of a cumulative effect assessment [Stock & Micheli 2016](https://doi.org/10.1111/geb.12493).
+
+@fig-multivariate-function illustrates how the separate responses of two different pressures _left_ can be combined by interaction _right_. An antagonistic interaction where the effect of one pressure is counteracted or reduced by the other pressure is shown by the blue curve $f_{12}(x)=f_1(x) * (1 - f_2(x))$ whilst the red curve illustrates how the combined response is greater than either of the individual responses the $f_{12}(x)= 1 - (1-f_1(x)) * (1 - f_2(x)))$.
+
+```{r}
+#| label: fig-multivariate-function
+#| fig-cap: "Two pressure response curves (left) and potential interactions (right)"
+#| fig-alt: "Graph of pressure response curves and potential interactions"
+#| fig-height: 3
+#| fig-width: 7
+#| echo: false
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(patchwork)
+
+x <- seq(0,1,0.001) %>% 
+  tibble::tibble(x=.) 
+
+k <- c(10,20) %>% tibble::tibble(k=.)
+x0 <- c(0.5,0.55) %>% tibble::tibble(x0=.)
+k <- bind_cols(k, x0)
+
+dat <- merge(k, x, all=T)
+
+dat <- dat %>%
+  mutate(y=1/(1+exp(-k*(x-x0))))
+
+p1 <- ggplot(dat) +
+  geom_line(aes(x=x, y=y, group=factor(k)),
+            linewidth=0.5) +
+  theme_minimal(base_size = fig_font_size) +
+  labs(x="pressure", y="response") 
+
+
+dat2 <- dat %>%
+  select(x,y,k) %>%
+  pivot_wider(names_from="k", values_from = "y", names_prefix = "k") %>%
+  mutate(add= (1-((1-k10)*(1-k20))), red = k10*(1-k20)) %>%
+  pivot_longer(c(add,red), names_to="interact", values_to = "y") 
+
+p2 <- ggplot(dat) +
+  geom_line(aes(x=x, y=y, group=factor(k)), alpha=0.3,
+            linewidth=0.5, linetype=2) +
+    geom_line(data=dat2, aes(x=x, y=y, group=factor(interact), 
+                colour=factor(interact)),
+            linewidth=1, alpha=0.8) +
+  theme_minimal(base_size = fig_font_size) +
+  scale_color_manual("", values = c("red","blue"), labels=c("+","-")) +
+  labs(x="pressure", y="response") 
+
+
+p1 + p2
+
+```
+
+
+
+
+## Fitting pressure-response functions
+
+
+We need to find the function which best describes the response of an ecosystem component to increasing intensity of a pressure.
+
+### Threshold functions
+
+This example @fig-fitting-nonlinear-function-1 shows observations of abundance of a species at different pressure intensities. By fitting a logistic function to the observations we can estimate the response of the species to the pressure and the levels of pressure which are
+
+```{r}
+#| label: fig-fitting-nonlinear-function-1
+#| fig-cap: "Abundance of a species versus pressure intensity"
+#| fig-alt: "Graph of observations of species versus pressure intensity"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+
+
+x <- seq(0,1,0.005) 
+
+err <- rnorm(length(x), mean=0, s=0.7)
+             
+x <- x %>% 
+  tibble::tibble(x=.) 
+err <- err %>% 
+  tibble::tibble(err=.) 
+
+x <- bind_cols(x, err)
+
+
+#k <- c(10,20,50) %>%
+k <- c(20) %>%
+  tibble::tibble(k=.)
+
+dat0 <- merge(k, x, all=T)
+
+x0 <- 0.55 
+
+dat0 <- dat0 %>%
+  mutate(y=1 - (1/(1+exp(-k*((x*(1+err)-1+x0)))))) %>%
+  mutate(y2=1 - (1/(1+exp(-k*(x-1+x0))))) %>%
+  mutate(yimp= (1/(1+exp(-k*(x-1+x0)))))
+  
+# dat0 <- dat0 %>%
+#   filter(y>0.001)
+  
+
+# ggplot(dat0) +
+#   geom_point(aes(x=x, y=y), alpha=0.2) +
+#   theme_minimal(base_size = fig_font_size) +
+#   labs(x="pressure",y="abundance") 
+
+ggplot(dat0) +
+  geom_point(aes(x=x, y=y), alpha=0.2) +
+  geom_line(aes(x=x, y=y2),
+            linewidth=1, colour="red",
+            alpha=0.4, linetype=1) +
+  geom_vline(xintercept = c(0.1,0.8), colour="red",
+             linetype=2, linewidth=1,
+             alpha=0.2) +
+  theme_minimal(base_size = fig_font_size) +
+  labs(x="pressure",y="abundance") 
+
+```
+
+Given the knowledge about the range of pressure values where the species shows a response, we can formulate a pressure-response function to describe how the impact on the species varies @fig-fitting-nonlinear-function-2
+
+```{r}
+#| label: fig-fitting-nonlinear-function-2
+#| fig-cap: "Species response to pressure intensity"
+#| fig-alt: "Graph of pressure-response function"
+#| fig-height: 3
+#| fig-width: 4
+#| echo: false
+#| warning: false
+#| 
+ggplot(dat0) +
+  geom_line(aes(x=x, y=yimp),
+            linewidth=1,
+            alpha=0.4, linetype=1) +
+  theme_minimal(base_size = fig_font_size) +
+  labs(x="pressure",y="impact") 
+```
+
+### Threshold function - a piecewise linear approximation
 
 The logistic function can be approximated by a piece-wise linear function with two fixed points. For general case where $y$ can vary outside the range $0-1$, the equation can be written:
 
@@ -378,7 +667,6 @@ ggplot(dat) +
 
 ```
 
-### Thresholds
 
 By selecting the appropriate parameters, piece-wise linear functions can be used to represent other functional relationship, including thresholds, where a pressure has no effect below a certain intensity or where its effect does not increase above a certain limit:
 
@@ -427,105 +715,13 @@ ggplot(dat) +
   labs(x="x", y="y") 
 ```
 
-more...
 
-### Other non-linear responses
-
-Other forms of non-linear response can be similar to a logarithmic function within a specific range. For example, looking again at @fig-logistic-function, we can see that an exponential function $f(x)=e^x$ resembles the growth phase of the logistic function where $x \lt x_0$.
-
-*other examples*
-
-*figures*
+### A generalized piecewise linear function
 
 In many cases the functions can be approximated by linear piece-wise functions. The number of segments in the piece-wise function can be increased to give a closer fit to the original function:
 
 $$ f(x)=\begin{cases} y_0, &  x \le x_0 \\                  y_0 + {(y_1 - y_0)  (\frac{x - x_0}{x_1 - x_0} )}, & x_0 \lt x \le x_1 \\ y_1 + {(y_2 - y_1)  (\frac{x - x_1}{x_2 - x_1} )}, & x_1 \lt x \le x_2 \\ ... \\ y_{n-1} + {(y_{n} - y_{n-1})  (\frac{x - x_{n-1}}{x_{n} - x_{n-1}} )}, & x_{n-1} \lt x \le x_{n} \\y_n, & x \gt x_n \end{cases} $$ {#eq-piecewise-multiple}
 
-## Multivariate responses
-
-more...
-
-## Modelling pressure response
-
-We need to find the function which best describes the response of an ecosystem component to increasing intensity of a pressure.
-
-This example @fig-fitting-nonlinear-function-1 shows observations of abundance of a species at different pressure intensities. By fitting a logistic function to the observations we can estimate the response of the species to the pressure and the levels of pressure which are
-
-```{r}
-#| label: fig-fitting-nonlinear-function-1
-#| fig-cap: "Abundance of a species versus pressure intensity"
-#| fig-alt: "Graph of observations of species versus pressure intensity"
-#| fig-height: 3
-#| fig-width: 4
-#| echo: false
-#| warning: false
-
-
-x <- seq(0,1,0.005) 
-
-err <- rnorm(length(x), mean=0, s=0.7)
-             
-x <- x %>% 
-  tibble::tibble(x=.) 
-err <- err %>% 
-  tibble::tibble(err=.) 
-
-x <- bind_cols(x, err)
-
-
-#k <- c(10,20,50) %>%
-k <- c(20) %>%
-  tibble::tibble(k=.)
-
-dat0 <- merge(k, x, all=T)
-
-x0 <- 0.55 
-
-dat0 <- dat0 %>%
-  mutate(y=1 - (1/(1+exp(-k*((x*(1+err)-1+x0)))))) %>%
-  mutate(y2=1 - (1/(1+exp(-k*(x-1+x0))))) %>%
-  mutate(yimp= (1/(1+exp(-k*(x-1+x0)))))
-  
-dat0 <- dat0 %>%
-  filter(y>0.001)
-  
-
-# ggplot(dat0) +
-#   geom_point(aes(x=x, y=y), alpha=0.2) +
-#   theme_minimal(base_size = fig_font_size) +
-#   labs(x="pressure",y="abundance") 
-
-ggplot(dat0) +
-  geom_point(aes(x=x, y=y), alpha=0.2) +
-  geom_line(aes(x=x, y=y2),
-            linewidth=1, colour="red",
-            alpha=0.4, linetype=1) +
-  geom_vline(xintercept = c(0.1,0.8), colour="red",
-             linetype=2, linewidth=1,
-             alpha=0.2) +
-  theme_minimal(base_size = fig_font_size) +
-  labs(x="pressure",y="abundance") 
-
-```
-
-Given the knowledge about the range of pressure values where the species shows a response, we can formulate a pressure-response function to describe how the impact on the species varies @fig-fitting-nonlinear-function-2
-
-```{r}
-#| label: fig-fitting-nonlinear-function-2
-#| fig-cap: "Species response to pressure intensity"
-#| fig-alt: "Graph of pressure-response function"
-#| fig-height: 3
-#| fig-width: 4
-#| echo: false
-#| warning: false
-#| 
-ggplot(dat0) +
-  geom_line(aes(x=x, y=yimp),
-            linewidth=1,
-            alpha=0.4, linetype=1) +
-  theme_minimal(base_size = fig_font_size) +
-  labs(x="pressure",y="impact") 
-```
 
 # Algorithms
 
@@ -583,4 +779,6 @@ The algorithm as written here is intended purely to demonstrate the simplicity o
 
 ## Spatial Interactions
 
-This is where things begin to get more complicated...
+The models implemented in the GES4SEAS tool consider only the information for values of ecosystem components and pressures in the grid cell or assessment unit in question when estimating the cumulative effect. For example, the effect of a contaminant which spreads from a source to affect ecosystems located  _at distance_ from the source can only be included in a cumulative effect assessment by modelling explicitly the spread of the contaminant from source to the point where cumulative effects are being estimated. This may be a complex hydrodynamic and advection/dispersion simulation or a coarse approximation using distance decay function but some form of explicit mapping of the spatial distribution of the pressure is necessary.
+
+Including potential effects of pressures outside the grid cells / assessment units in which they occur is not possible.
